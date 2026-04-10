@@ -1,1 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Lightning Dice Predictor - Three AI Pattern Recognition System">
+    <title>Lightning Dice Predictor - Three AI System</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="lightning-icon">⚡</span>
+                <h1>Lightning Dice Predictor</h1>
+                <span class="version-badge">v4.0 - Three AI System</span>
+            </div>
+            <div class="status-badge" id="connectionStatus">
+                <span class="status-dot"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-link active">🎯 Predictor</a>
+                <a href="/analysis.html" class="nav-link">📊 Analysis</a>
+            </div>
+        </header>
 
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Rounds (24h)</div>
+                <div class="stat-value" id="totalRounds">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Average Result</div>
+                <div class="stat-value" id="avgResult">0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Most Active Group</div>
+                <div class="stat-value" id="mostActiveGroup">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Lightning Boost</div>
+                <div class="stat-value" id="lightningBoost">0%</div>
+            </div>
+        </div>
+
+        <!-- Three AI Pattern Table -->
+        <div class="prediction-section">
+            <h2>🎯 THREE AI PATTERN PREDICTION SYSTEM</h2>
+            
+            <div class="pattern-table">
+                <div class="pattern-header">
+                    <div class="col-ai">AI Model</div>
+                    <div class="col-input">Input Pattern</div>
+                    <div class="col-prediction">Prediction</div>
+                    <div class="col-confidence">Confidence</div>
+                    <div class="col-accuracy">Accuracy</div>
+                </div>
+                
+                <div class="pattern-row" id="ai2Row">
+                    <div class="col-ai"><span class="ai-badge ai2">🤖 AI #1</span><br><small>2-Step</small></div>
+                    <div class="col-input" id="ai2Input">--</div>
+                    <div class="col-prediction" id="ai2Pred">--</div>
+                    <div class="col-confidence" id="ai2Conf">--</div>
+                    <div class="col-accuracy" id="ai2Acc">--</div>
+                </div>
+                
+                <div class="pattern-row" id="ai3Row">
+                    <div class="col-ai"><span class="ai-badge ai3">🤖 AI #2</span><br><small>3-Step</small></div>
+                    <div class="col-input" id="ai3Input">--</div>
+                    <div class="col-prediction" id="ai3Pred">--</div>
+                    <div class="col-confidence" id="ai3Conf">--</div>
+                    <div class="col-accuracy" id="ai3Acc">--</div>
+                </div>
+                
+                <div class="pattern-row" id="ai4Row">
+                    <div class="col-ai"><span class="ai-badge ai4">🤖 AI #3</span><br><small>4-Step</small></div>
+                    <div class="col-input" id="ai4Input">--</div>
+                    <div class="col-prediction" id="ai4Pred">--</div>
+                    <div class="col-confidence" id="ai4Conf">--</div>
+                    <div class="col-accuracy" id="ai4Acc">--</div>
+                </div>
+            </div>
+
+            <!-- Ensemble Final Prediction -->
+            <div class="final-prediction-card">
+                <div class="final-header">
+                    <span class="final-icon">🏆</span>
+                    <span class="final-title">ENSEMBLE FINAL PREDICTION</span>
+                    <span class="final-vote" id="voteCount">(2 AI agree)</span>
+                </div>
+                <div class="final-group" id="finalGroup">
+                    <span class="final-group-icon" id="finalIcon">🎯</span>
+                    <span class="final-group-name" id="finalName">--</span>
+                    <span class="final-group-range" id="finalRange">--</span>
+                </div>
+                <div class="final-confidence">
+                    <div class="confidence-meter">
+                        <div class="confidence-fill" id="confidenceFill" style="width: 0%"></div>
+                    </div>
+                    <span class="confidence-text" id="finalConfidence">0%</span>
+                </div>
+                <div class="final-explanation" id="finalExplanation">Waiting for data...</div>
+                <div class="final-weights" id="finalWeights"></div>
+            </div>
+        </div>
+
+        <!-- Group Statistics -->
+        <div class="group-stats">
+            <div class="group-stat low-group">
+                <div class="group-header">
+                    <span class="group-icon">🔴</span>
+                    <span class="group-title">LOW</span>
+                    <span class="group-range">(3-9)</span>
+                </div>
+                <div class="group-probability" id="lowProb">0%</div>
+                <div class="group-trend" id="lowTrend">-</div>
+            </div>
+            <div class="group-stat medium-group">
+                <div class="group-header">
+                    <span class="group-icon">🟡</span>
+                    <span class="group-title">MEDIUM</span>
+                    <span class="group-range">(10-11)</span>
+                </div>
+                <div class="group-probability" id="mediumProb">0%</div>
+                <div class="group-trend" id="mediumTrend">-</div>
+            </div>
+            <div class="group-stat high-group">
+                <div class="group-header">
+                    <span class="group-icon">🟢</span>
+                    <span class="group-title">HIGH</span>
+                    <span class="group-range">(12-18)</span>
+                </div>
+                <div class="group-probability" id="highProb">0%</div>
+                <div class="group-trend" id="highTrend">-</div>
+            </div>
+        </div>
+
+        <!-- Prediction History Table -->
+        <div class="history-section">
+            <div class="section-header">
+                <h2>📋 PREDICTION HISTORY (Last 200 Results)</h2>
+            </div>
+            <div class="table-container">
+                <table class="history-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Dice</th>
+                            <th>Total</th>
+                            <th>AI #1<br>2-Step</th>
+                            <th>AI #2<br>3-Step</th>
+                            <th>AI #3<br>4-Step</th>
+                            <th>ENSEMBLE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr><td colspan="7">Loading history......</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" id="prevPageBtn" disabled>◀ Previous</button>
+                <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
+                <button class="pagination-btn" id="nextPageBtn" disabled>Next ▶</button>
+            </div>
+        </div>
+
+        <!-- Recent Results -->
+        <div class="recent-section">
+            <div class="section-header">
+                <h2>📊 Recent Results</h2>
+                <button class="refresh-btn" id="refreshBtn">🔄 Refresh</button>
+            </div>
+            <div class="results-grid" id="resultsGrid">
+                <div class="loading">Loading results...</div>
+            </div>
+        </div>
+
+
+        <!-- Statistics Table -->
+        <div class="stats-section collapsible-section">
+            <div class="stats-header" id="statsHeader">
+                <h2>📈 Number Statistics (24 Hours)</h2>
+                <span class="toggle-icon" id="toggleIcon">▶</span>
+            </div>
+            <div class="stats-content" id="statsContent" style="display: none;">
+                <div class="table-container">
+                    <table class="stats-table" id="statsTable">
+                        <thead>
+                            <tr>
+                                <th>Number</th>
+                                <th>Group</th>
+                                <th>Frequency</th>
+                                <th>Hot Freq</th>
+                                <th>Last Seen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statsTableBody">
+                            <tr><td colspan="5">Loading statistics......</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auto Refresh Control -->
+        <div class="auto-refresh-control">
+            <label class="switch">
+                <input type="checkbox" id="autoRefreshToggle" checked>
+                <span class="slider round"></span>
+            </label>
+            <span>Auto Refresh (3s)</span>
+            <span class="refresh-timer" id="refreshTimer">3s</span>
+        </div>
+    </div>
+
+    <!-- Load AI Models in order -->
+    <script src="/ai/ai-2step.js"></script>
+    <script src="/ai/ai-3step.js"></script>
+    <script src="/ai/ai-4step.js"></script>
+    <script src="/ai/ensemble.js"></script>
+    <script src="/script.js"></script>
+</body>
+</html>
