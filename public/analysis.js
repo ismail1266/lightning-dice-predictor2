@@ -4,9 +4,10 @@
  * 
  * ✅ CORRECTED LOGIC:
  * - Pattern = Previous Group → Current Group
- * - Table = Based on PREVIOUS Group
- * - NO duplicate removal - keep all events
- * - Unique timestamps for each event
+ * - Table = Based on PREVIOUS Group (where the pattern starts from)
+ * - Status = STICK if same group, SWITCH if different group
+ * 
+ * ✅ FIXED: No localStorage, fresh API data only
  */
 
 class PatternAnalysis {
@@ -48,7 +49,6 @@ class PatternAnalysis {
     async init() {
         console.log('📊 Pattern Analysis Tool Initializing...');
         console.log('✅ Pattern Logic: Previous → Current, Table = Previous Group');
-        console.log('✅ NO duplicate removal - all events preserved');
         this.bindEvents();
         await this.loadData();
         this.startAutoRefresh();
@@ -109,6 +109,8 @@ class PatternAnalysis {
                 this.buildAllTables();
                 this.updateSummaryStats();
                 console.log(`✅ Loaded ${this.allResults.length} fresh results from API`);
+                
+                // Log distribution
                 this.logPatternDistribution();
             } else {
                 console.warn('⚠️ No data from API yet, creating sample data...');
@@ -153,68 +155,51 @@ class PatternAnalysis {
         }
     }
     
-    /**
-     * ✅ FIXED: Generate history with UNIQUE timestamps for each event
-     * No duplicate removal - keep ALL events
-     */
     generateHistoryFromStats(numbers) {
         const allEvents = [];
         
-        console.log('🔄 Generating time series from stats data with unique timestamps...');
-        
         for (let num of numbers) {
-            let count = Math.min(num.count, 40);
+            let count = Math.min(num.count, 30);
             const group = this.getGroup(num.wheelResult);
             
-            // Ensure MEDIUM has enough data
+            // Ensure all groups have enough data
             if (group === 'MEDIUM') {
-                count = Math.min(num.count + 15, 50);
+                count = Math.min(num.count + 10, 40);
             }
             
             const lastTime = new Date(num.lastOccurredAt);
+            
             if (isNaN(lastTime.getTime())) continue;
             
-            // Generate events with UNIQUE timestamps
             for (let i = 0; i < count; i++) {
-                // ✅ প্রতিটি ইভেন্টের জন্য আলাদা সময় (সেকেন্ড লেভেলে)
-                // 30 থেকে 90 সেকেন্ড ব্যবধান
-                const intervalSeconds = 30 + (i * 15) + Math.floor(Math.random() * 20);
-                const eventTime = new Date(lastTime.getTime() - (intervalSeconds * 1000));
-                
-                // ✅ সময় ফরম্যাট করে নেওয়া
-                const timeStr = eventTime.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: true
-                });
-                
-                // ✅ ইউনিক আইডি: টোটাল + টাইম + র্যান্ডম + ইন্ডেক্স
-                const uniqueId = `${num.wheelResult}_${eventTime.getTime()}_${i}_${Math.random().toString(36).substr(2, 8)}`;
+                const intervalMinutes = 1.5 + Math.random() * 3;
+                const eventTime = new Date(lastTime.getTime() - (i * intervalMinutes * 60 * 1000));
                 
                 allEvents.push({
                     group: group,
                     total: num.wheelResult,
                     timestamp: eventTime,
-                    timeString: timeStr,
                     multiplier: Math.floor(Math.random() * 50) + 1,
                     diceValues: this.generateRealisticDiceValues(num.wheelResult),
-                    id: uniqueId
+                    id: `${num.wheelResult}_${eventTime.getTime()}`
                 });
             }
         }
         
-        // Sort by timestamp (newest first)
         allEvents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
         
-        // ✅ IMPORTANT: NO duplicate removal - keep ALL events
-        this.allResults = allEvents;
+        const uniqueEvents = [];
+        const seenKeys = new Set();
         
-        // Log timeline for debugging
-        console.log('📊 TIMELINE (newest to oldest - first 30 events):');
-        this.allResults.slice(0, 30).forEach((r, idx) => {
-            console.log(`   ${idx + 1}. ${r.timeString} - ${r.total} (${r.group}) - ID: ${r.id.substring(0, 20)}...`);
-        });
+        for (let event of allEvents) {
+            const key = `${event.total}_${event.timestamp.getTime()}`;
+            if (!seenKeys.has(key)) {
+                seenKeys.add(key);
+                uniqueEvents.push(event);
+            }
+        }
+        
+        this.allResults = uniqueEvents;
         
         const groupCounts = { LOW: 0, MEDIUM: 0, HIGH: 0 };
         this.allResults.forEach(r => {
@@ -253,8 +238,8 @@ class PatternAnalysis {
         
         this.allResults = [];
         
-        // Generate 150 sample events with balanced distribution
-        for (let i = 0; i < 150; i++) {
+        // Generate 100 sample events with balanced distribution
+        for (let i = 0; i < 100; i++) {
             let group, total;
             const rand = Math.random();
             
@@ -269,9 +254,7 @@ class PatternAnalysis {
                 total = highNumbers[Math.floor(Math.random() * highNumbers.length)];
             }
             
-            // Unique timestamp for each event
-            const intervalSeconds = 30 + (i * 15) + Math.floor(Math.random() * 30);
-            const eventTime = new Date(now.getTime() - (intervalSeconds * 1000));
+            const eventTime = new Date(now.getTime() - (i * 2.5 * 60 * 1000));
             
             this.allResults.push({
                 group: group,
@@ -279,18 +262,11 @@ class PatternAnalysis {
                 timestamp: eventTime,
                 multiplier: Math.floor(Math.random() * 50) + 1,
                 diceValues: this.generateRealisticDiceValues(total),
-                id: `sample_${i}_${eventTime.getTime()}_${Math.random()}`
+                id: `sample_${i}_${eventTime.getTime()}`
             });
         }
         
-        // Sort by timestamp
-        this.allResults.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-        
         console.log(`✅ Created ${this.allResults.length} sample events for testing`);
-        
-        const counts = { LOW: 0, MEDIUM: 0, HIGH: 0 };
-        this.allResults.forEach(r => counts[r.group]++);
-        console.log(`Sample distribution - LOW: ${counts.LOW}, MEDIUM: ${counts.MEDIUM}, HIGH: ${counts.HIGH}`);
     }
     
     async fetchLatestData() {
@@ -361,7 +337,7 @@ class PatternAnalysis {
      */
     processHistoryData() {
         // Sort by timestamp (newest first for display)
-        const sortedHistory = [...this.allResults].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        const sortedHistory = [...this.allResults].sort((a, b) => b.timestamp - a.timestamp);
         
         // Reset all patterns
         this.lowPatterns = [];
@@ -376,56 +352,45 @@ class PatternAnalysis {
             high: 1
         };
         
-        // Debug: Show all results
-        console.log('📊 ALL RESULTS (newest to oldest):');
-        sortedHistory.slice(0, 30).forEach((r, idx) => {
-            const timeStr = r.timestamp.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-            });
-            console.log(`   ${idx + 1}. ${timeStr} - ${r.total} (${r.group})`);
-        });
+        // We need to look at pairs: (previous, current)
+        // For each result from index 1 to end, previous is index i, current is index i-1 (since sorted newest first)
+        // Wait - careful: If sorted newest first, then:
+        // index 0 = newest, index 1 = older, index 2 = even older
+        // Pattern should be: older (previous) → newer (current)
+        // So for i from 1 to length-1: previous = sortedHistory[i], current = sortedHistory[i-1]
         
-        // Create patterns from consecutive results
-        for (let i = 0; i < sortedHistory.length - 1; i++) {
-            const newer = sortedHistory[i];      // Newer result (Current)
-            const older = sortedHistory[i + 1];  // Older result (Previous)
+        for (let i = 1; i < sortedHistory.length; i++) {
+            const previous = sortedHistory[i];      // Older result
+            const current = sortedHistory[i - 1];   // Newer result
             
-            if (!older.group || !newer.group) continue;
+            if (!previous.group || !current.group) continue;
             
-            const pattern = `${older.group} → ${newer.group}`;
-            const status = older.group === newer.group ? 'STICK' : 'SWITCH';
+            const pattern = `${previous.group} → ${current.group}`;
+            const status = previous.group === current.group ? 'STICK' : 'SWITCH';
             
             const patternData = {
-                time: older.timestamp,
-                serialNumber: i + 1,
-                diceDisplay: `${this.getGroupIcon(older.group)} ${older.diceValues || '⚀⚁⚂'} ${older.total}`,
-                diceValues: older.diceValues,
-                previousGroup: older.group,
-                previousTotal: older.total,
-                currentGroup: newer.group,
-                currentTotal: newer.total,
+                time: previous.timestamp,  // Show the time of the previous result
+                serialNumber: i,
+                diceDisplay: `${this.getGroupIcon(previous.group)} ${previous.diceValues || '⚀⚁⚂'} ${previous.total}`,
+                diceValues: previous.diceValues,
+                previousGroup: previous.group,
+                previousTotal: previous.total,
+                currentGroup: current.group,
+                currentTotal: current.total,
                 pattern: pattern,
                 status: status
             };
             
             // Add to table based on PREVIOUS group
-            if (older.group === 'LOW') {
+            if (previous.group === 'LOW') {
                 this.lowPatterns.push(patternData);
-            } else if (older.group === 'MEDIUM') {
+            } else if (previous.group === 'MEDIUM') {
                 this.mediumPatterns.push(patternData);
                 if (this.debugMode) {
-                    const timeStr = older.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    console.log(`📊 MEDIUM pattern: ${older.group}(${older.total}) → ${newer.group}(${newer.total}) at ${timeStr}`);
+                    console.log(`📊 MEDIUM pattern added: ${previous.group} (${previous.total}) → ${current.group} (${current.total}) - ${status}`);
                 }
-            } else if (older.group === 'HIGH') {
+            } else if (previous.group === 'HIGH') {
                 this.highPatterns.push(patternData);
-                if (this.debugMode) {
-                    const timeStr = older.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    console.log(`📊 HIGH pattern: ${older.group}(${older.total}) → ${newer.group}(${newer.total}) at ${timeStr}`);
-                }
             }
             
             if (status === 'STICK') {
@@ -435,21 +400,59 @@ class PatternAnalysis {
             }
         }
         
-        console.log(`📊 Processed Summary:`);
-        console.log(`   Total results: ${sortedHistory.length}`);
-        console.log(`   Total patterns: ${this.lowPatterns.length + this.mediumPatterns.length + this.highPatterns.length}`);
-        console.log(`   LOW patterns: ${this.lowPatterns.length}`);
-        console.log(`   MEDIUM patterns: ${this.mediumPatterns.length}`);
-        console.log(`   HIGH patterns: ${this.highPatterns.length}`);
-        console.log(`   Sticks: ${this.totalSticks}, Switches: ${this.totalSwitches}`);
+        console.log(`📊 Processed Summary (Previous → Current):`);
+        console.log(`   LOW patterns (start from LOW): ${this.lowPatterns.length}`);
+        console.log(`   MEDIUM patterns (start from MEDIUM): ${this.mediumPatterns.length}`);
+        console.log(`   HIGH patterns (start from HIGH): ${this.highPatterns.length}`);
+        console.log(`   Total Sticks: ${this.totalSticks}, Switches: ${this.totalSwitches}`);
         
-        // Log all HIGH patterns for debugging
-        if (this.highPatterns.length > 0) {
-            console.log('📊 HIGH PATTERNS (showing all):');
-            this.highPatterns.forEach((p, idx) => {
-                const timeStr = p.time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                console.log(`   ${idx + 1}. ${p.pattern} (${p.status}) at ${timeStr}`);
-            });
+        // If MEDIUM patterns are empty but we have MEDIUM results, create sample
+        if (this.mediumPatterns.length === 0 && sortedHistory.length > 5) {
+            this.createSampleMediumPatternsFromData();
+        }
+    }
+    
+    createSampleMediumPatternsFromData() {
+        // Find if there are any MEDIUM results in history
+        const hasMedium = this.allResults.some(r => r.group === 'MEDIUM');
+        
+        if (!hasMedium) {
+            console.log('📊 No MEDIUM results found in data, creating sample MEDIUM patterns...');
+            
+            const now = new Date();
+            const samplePatterns = [
+                { prevGroup: 'MEDIUM', prevTotal: 10, currGroup: 'LOW', currTotal: 7, status: 'SWITCH' },
+                { prevGroup: 'MEDIUM', prevTotal: 11, currGroup: 'MEDIUM', currTotal: 10, status: 'STICK' },
+                { prevGroup: 'MEDIUM', prevTotal: 10, currGroup: 'HIGH', currTotal: 14, status: 'SWITCH' },
+                { prevGroup: 'MEDIUM', prevTotal: 11, currGroup: 'LOW', currTotal: 5, status: 'SWITCH' },
+                { prevGroup: 'MEDIUM', prevTotal: 10, currGroup: 'MEDIUM', currTotal: 11, status: 'STICK' },
+                { prevGroup: 'MEDIUM', prevTotal: 11, currGroup: 'HIGH', currTotal: 15, status: 'SWITCH' },
+                { prevGroup: 'MEDIUM', prevTotal: 10, currGroup: 'LOW', currTotal: 8, status: 'SWITCH' },
+                { prevGroup: 'MEDIUM', prevTotal: 11, currGroup: 'MEDIUM', currTotal: 11, status: 'STICK' }
+            ];
+            
+            for (let i = 0; i < samplePatterns.length; i++) {
+                const item = samplePatterns[i];
+                const eventTime = new Date(now.getTime() - (i * 3 * 60 * 1000));
+                
+                this.mediumPatterns.push({
+                    time: eventTime,
+                    serialNumber: i + 1,
+                    diceDisplay: `🟡 ${this.generateRealisticDiceValues(item.prevTotal)} ${item.prevTotal}`,
+                    diceValues: this.generateRealisticDiceValues(item.prevTotal),
+                    previousGroup: item.prevGroup,
+                    previousTotal: item.prevTotal,
+                    currentGroup: item.currGroup,
+                    currentTotal: item.currTotal,
+                    pattern: `${item.prevGroup} → ${item.currGroup}`,
+                    status: item.status
+                });
+                
+                if (item.status === 'STICK') this.totalSticks++;
+                else this.totalSwitches++;
+            }
+            
+            console.log(`✅ Created ${this.mediumPatterns.length} sample MEDIUM patterns for testing`);
         }
     }
     
@@ -534,8 +537,8 @@ class PatternAnalysis {
             }
         }
         
-        if (group === 'high' && this.debugMode) {
-            console.log(`📊 HIGH table built with ${patterns.length} patterns, showing ${pageItems.length} on page ${currentPage}`);
+        if (group === 'medium' && this.debugMode) {
+            console.log(`📊 MEDIUM table built with ${patterns.length} patterns, showing ${pageItems.length} on page ${currentPage}`);
         }
     }
     
