@@ -1,6 +1,6 @@
 /**
- * Lightning Dice Predictor - Three AI Pattern System
- * Main Controller - FIXED: No localStorage, fresh API data only
+ * Lightning Dice Predictor - Four AI Pattern System
+ * Main Controller - Four AI Models: Stick, Extreme Switch, Low-Mid Switch, Mid-High Switch
  */
 
 class LightningDiceApp {
@@ -31,7 +31,7 @@ class LightningDiceApp {
     }
     
     async init() {
-        console.log('🚀 Initializing Three AI Pattern System...');
+        console.log('🚀 Initializing Four AI Pattern System...');
         this.bindEvents();
         
         await this.loadBaseData();
@@ -134,7 +134,6 @@ class LightningDiceApp {
     
     async loadFullHistory() {
         try {
-            // ✅ FIXED: No localStorage - always generate fresh from API
             console.log('🔄 Generating fresh history from API stats (24h data)...');
             
             if (this.baseStats && this.baseStats.totalStats) {
@@ -142,7 +141,6 @@ class LightningDiceApp {
                 console.log('✅ Fresh history generated from 24h API data');
             } else {
                 console.warn('⚠️ No baseStats available, waiting for API...');
-                // 2 সেকেন্ড পরে আবার চেষ্টা
                 setTimeout(() => {
                     if (this.baseStats && this.baseStats.totalStats) {
                         this.generateHistoryFromStatsWithTimeSeries();
@@ -154,9 +152,6 @@ class LightningDiceApp {
         }
     }
     
-    /**
-     * Generate history with proper time series from API data
-     */
     generateHistoryFromStatsWithTimeSeries() {
         const numbers = this.baseStats.totalStats;
         const allEvents = [];
@@ -164,16 +159,13 @@ class LightningDiceApp {
         console.log('🔄 Generating time series from stats data...');
         
         for (let num of numbers) {
-            // Limit to reasonable count to avoid too many events
             const count = Math.min(num.count, 40);
             const lastTime = new Date(num.lastOccurredAt);
             const group = this.getGroup(num.wheelResult);
             
             if (isNaN(lastTime.getTime())) continue;
             
-            // Generate events backward from last occurrence
             for (let i = 0; i < count; i++) {
-                // Each event 2-5 minutes apart (realistic for Lightning Dice)
                 const intervalMinutes = 2 + Math.random() * 3;
                 const eventTime = new Date(lastTime.getTime() - (i * intervalMinutes * 60 * 1000));
                 
@@ -188,10 +180,8 @@ class LightningDiceApp {
             }
         }
         
-        // Sort by timestamp (newest first)
         allEvents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
         
-        // Remove duplicates (same timestamp)
         const uniqueEvents = [];
         const seenKeys = new Set();
         
@@ -218,51 +208,42 @@ class LightningDiceApp {
         return `${dice[Math.floor(Math.random() * 6)]}${dice[Math.floor(Math.random() * 6)]}${dice[Math.floor(Math.random() * 6)]}`;
     }
     
-    // ❌ localStorage DISABLED
-    saveToLocalStorage() {
-        // No localStorage - using fresh API data only
-        console.log('💾 localStorage saving disabled - using fresh API data only');
-    }
-    
-    // ❌ localStorage DISABLED
-    loadFromLocalStorage() {
-        return null;
-    }
-    
     async trainAllModels() {
-        console.log('🎓 Training all AI models...');
+        console.log('🎓 Training all 4 AI models...');
         
-        // Get history in correct order (oldest to newest for training)
         const historyInOrder = this.getAllResultsInOrder();
         
-        if (window.AI_2Step) {
-            window.AI_2Step.train(historyInOrder);
+        if (window.AI_Stick) {
+            window.AI_Stick.train(historyInOrder);
         }
         
-        if (window.AI_3Step) {
-            window.AI_3Step.train(historyInOrder);
+        if (window.AI_ExtremeSwitch) {
+            window.AI_ExtremeSwitch.train(historyInOrder);
         }
         
-        if (window.AI_4Step) {
-            window.AI_4Step.train(historyInOrder);
+        if (window.AI_LowMidSwitch) {
+            window.AI_LowMidSwitch.train(historyInOrder);
         }
         
-        if (window.EnsembleVoter) {
-            const acc2 = window.AI_2Step?.getAccuracy() || 60;
-            const acc3 = window.AI_3Step?.getAccuracy() || 65;
-            const acc4 = window.AI_4Step?.getAccuracy() || 70;
-            window.EnsembleVoter.updateWeights(acc2, acc3, acc4);
+        if (window.AI_MidHighSwitch) {
+            window.AI_MidHighSwitch.train(historyInOrder);
         }
         
-        console.log('✅ All AI models trained!');
+        if (window.EnsembleVoterV4) {
+            const accStick = window.AI_Stick?.getAccuracy() || 60;
+            const accExtreme = window.AI_ExtremeSwitch?.getAccuracy() || 60;
+            const accLowMid = window.AI_LowMidSwitch?.getAccuracy() || 60;
+            const accMidHigh = window.AI_MidHighSwitch?.getAccuracy() || 60;
+            window.EnsembleVoterV4.updateWeights(accStick, accExtreme, accLowMid, accMidHigh);
+        }
+        
+        console.log('✅ All 4 AI models trained!');
     }
     
-    // Returns results in correct order (oldest to newest) for AI training
     getAllResultsInOrder() {
         return [...this.allResults].reverse();
     }
     
-    // Returns last N results in correct order (oldest to newest) for prediction
     getLastNResults(n) {
         const orderedResults = this.getAllResultsInOrder();
         return orderedResults.slice(-n).map(r => r.group);
@@ -306,37 +287,39 @@ class LightningDiceApp {
                 
                 const gameResult = this.parseGameData(data);
                 const lastResults = this.getLastNResults(4);
+                const currentGroup = lastResults[lastResults.length - 1];
+                const previousGroup = lastResults[lastResults.length - 2];
                 
-                console.log('📊 Last 4 results (oldest to newest):', lastResults);
+                console.log('📊 Current Group:', currentGroup, 'Previous Group:', previousGroup);
                 
-                const pred2 = window.AI_2Step ? window.AI_2Step.predict(lastResults) : null;
-                const pred3 = window.AI_3Step ? window.AI_3Step.predict(lastResults) : null;
-                const pred4 = window.AI_4Step ? window.AI_4Step.predict(lastResults) : null;
+                const predStick = window.AI_Stick ? window.AI_Stick.predict(currentGroup, previousGroup) : null;
+                const predExtreme = window.AI_ExtremeSwitch ? window.AI_ExtremeSwitch.predict(currentGroup, previousGroup) : null;
+                const predLowMid = window.AI_LowMidSwitch ? window.AI_LowMidSwitch.predict(currentGroup, previousGroup) : null;
+                const predMidHigh = window.AI_MidHighSwitch ? window.AI_MidHighSwitch.predict(currentGroup, previousGroup) : null;
                 
-                const ensemble = window.EnsembleVoter ? window.EnsembleVoter.combine(pred2, pred3, pred4) : null;
+                const ensemble = window.EnsembleVoterV4 ? window.EnsembleVoterV4.combine(predStick, predExtreme, predLowMid, predMidHigh, currentGroup, previousGroup) : null;
                 
-                this.addToHistory(gameResult, pred2, pred3, pred4, ensemble);
+                this.addToHistory(gameResult, predStick, predExtreme, predLowMid, predMidHigh, ensemble);
                 
-                // Add to beginning (newest first)
                 this.allResults.unshift(gameResult);
                 this.lastGameId = gameResult.id;
                 this.latestResult = gameResult;
                 
-                // Keep only last 500
                 if (this.allResults.length > 500) this.allResults.pop();
                 
                 // Update AI models with new result
-                const newLastResults = this.getLastNResults(5);
-                if (window.AI_2Step) window.AI_2Step.updateWithResult(gameResult, newLastResults);
-                if (window.AI_3Step) window.AI_3Step.updateWithResult(gameResult, newLastResults);
-                if (window.AI_4Step) window.AI_4Step.updateWithResult(gameResult, newLastResults);
+                if (window.AI_Stick) window.AI_Stick.updateWithResult(gameResult, previousGroup);
+                if (window.AI_ExtremeSwitch) window.AI_ExtremeSwitch.updateWithResult(gameResult, previousGroup);
+                if (window.AI_LowMidSwitch) window.AI_LowMidSwitch.updateWithResult(gameResult, previousGroup);
+                if (window.AI_MidHighSwitch) window.AI_MidHighSwitch.updateWithResult(gameResult, previousGroup);
                 
                 if (ensemble) {
                     const correct = ensemble.final.group === gameResult.group;
-                    if (window.AI_2Step) window.AI_2Step.recordPredictionResult(pred2?.group === gameResult.group);
-                    if (window.AI_3Step) window.AI_3Step.recordPredictionResult(pred3?.group === gameResult.group);
-                    if (window.AI_4Step) window.AI_4Step.recordPredictionResult(pred4?.group === gameResult.group);
-                    if (window.EnsembleVoter) window.EnsembleVoter.recordPredictionResult(correct);
+                    if (window.AI_Stick) window.AI_Stick.recordPredictionResult(predStick?.nextGroup === gameResult.group);
+                    if (window.AI_ExtremeSwitch) window.AI_ExtremeSwitch.recordPredictionResult(predExtreme?.nextGroup === gameResult.group);
+                    if (window.AI_LowMidSwitch) window.AI_LowMidSwitch.recordPredictionResult(predLowMid?.nextGroup === gameResult.group);
+                    if (window.AI_MidHighSwitch) window.AI_MidHighSwitch.recordPredictionResult(predMidHigh?.nextGroup === gameResult.group);
+                    if (window.EnsembleVoterV4) window.EnsembleVoterV4.recordPredictionResult(correct);
                 }
                 
                 this.updateUI();
@@ -348,7 +331,7 @@ class LightningDiceApp {
         }
     }
     
-    addToHistory(result, pred2, pred3, pred4, ensemble) {
+    addToHistory(result, predStick, predExtreme, predLowMid, predMidHigh, ensemble) {
         const time = result.timestamp.toLocaleTimeString();
         
         const historyEntry = {
@@ -356,13 +339,15 @@ class LightningDiceApp {
             dice: result.diceValues,
             total: result.total,
             actualGroup: result.group,
-            pred2: pred2?.group || 'MEDIUM',
-            pred3: pred3?.group || 'MEDIUM',
-            pred4: pred4?.group || 'MEDIUM',
+            predStick: predStick?.nextGroup || 'MEDIUM',
+            predExtreme: predExtreme?.nextGroup || 'MEDIUM',
+            predLowMid: predLowMid?.nextGroup || 'MEDIUM',
+            predMidHigh: predMidHigh?.nextGroup || 'MEDIUM',
             ensemble: ensemble?.final?.group || 'MEDIUM',
-            correct2: pred2?.group === result.group,
-            correct3: pred3?.group === result.group,
-            correct4: pred4?.group === result.group,
+            correctStick: predStick?.nextGroup === result.group,
+            correctExtreme: predExtreme?.nextGroup === result.group,
+            correctLowMid: predLowMid?.nextGroup === result.group,
+            correctMidHigh: predMidHigh?.nextGroup === result.group,
             correctEnsemble: ensemble?.final?.group === result.group,
             timestamp: result.timestamp
         };
@@ -381,7 +366,7 @@ class LightningDiceApp {
         const pageItems = this.predictionHistory.slice(startIndex, startIndex + this.itemsPerPage);
         
         if (pageItems.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7">No history data yet...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8">No history data yet...</td></tr>';
             this.updatePaginationControls();
             return;
         }
@@ -394,9 +379,10 @@ class LightningDiceApp {
                     <td>${item.time}</td>
                     <td class="dice-values">🎲 ${item.dice}</td>
                     <td><strong>${item.total}</strong> <small>(${item.actualGroup})</small></td>
-                    <td><span class="prediction-badge ${item.correct2 ? 'correct' : 'incorrect'}">${getIcon(item.pred2)} ${item.pred2} ${item.correct2 ? '✓' : '✗'}</span></td>
-                    <td><span class="prediction-badge ${item.correct3 ? 'correct' : 'incorrect'}">${getIcon(item.pred3)} ${item.pred3} ${item.correct3 ? '✓' : '✗'}</span></td>
-                    <td><span class="prediction-badge ${item.correct4 ? 'correct' : 'incorrect'}">${getIcon(item.pred4)} ${item.pred4} ${item.correct4 ? '✓' : '✗'}</span></td>
+                    <td><span class="prediction-badge ${item.correctStick ? 'correct' : 'incorrect'}">${getIcon(item.predStick)} ${item.predStick} ${item.correctStick ? '✓' : '✗'}</span></td>
+                    <td><span class="prediction-badge ${item.correctExtreme ? 'correct' : 'incorrect'}">${getIcon(item.predExtreme)} ${item.predExtreme} ${item.correctExtreme ? '✓' : '✗'}</span></td>
+                    <td><span class="prediction-badge ${item.correctLowMid ? 'correct' : 'incorrect'}">${getIcon(item.predLowMid)} ${item.predLowMid} ${item.correctLowMid ? '✓' : '✗'}</span></td>
+                    <td><span class="prediction-badge ${item.correctMidHigh ? 'correct' : 'incorrect'}">${getIcon(item.predMidHigh)} ${item.predMidHigh} ${item.correctMidHigh ? '✓' : '✗'}</span></td>
                     <td><span class="prediction-badge ${item.correctEnsemble ? 'correct' : 'incorrect'}">${getIcon(item.ensemble)} ${item.ensemble} ${item.correctEnsemble ? '✓' : '✗'}</span></td>
                 </tr>
             `;
@@ -432,46 +418,71 @@ class LightningDiceApp {
             return;
         }
         
-        console.log('📊 AI Prediction Input (oldest to newest):', lastResults);
+        const currentGroup = lastResults[lastResults.length - 1];
+        const previousGroup = lastResults[lastResults.length - 2];
         
-        const pred2 = window.AI_2Step ? window.AI_2Step.predict(lastResults) : null;
-        const pred3 = window.AI_3Step ? window.AI_3Step.predict(lastResults) : null;
-        const pred4 = window.AI_4Step ? window.AI_4Step.predict(lastResults) : null;
-        const ensemble = window.EnsembleVoter ? window.EnsembleVoter.combine(pred2, pred3, pred4) : null;
+        console.log('📊 Current Group:', currentGroup, 'Previous Group:', previousGroup);
         
-        if (pred2) {
-            document.getElementById('ai2Input').textContent = pred2.pattern ? pred2.pattern.replace(/\|/g, ' → ') : '--';
-            document.getElementById('ai2Pred').innerHTML = `${window.AI_2Step.getGroupIcon(pred2.group)} ${pred2.group}`;
-            document.getElementById('ai2Conf').textContent = `${pred2.confidence}%`;
-            document.getElementById('ai2Acc').textContent = `${pred2.accuracy.toFixed(1)}%`;
+        const predStick = window.AI_Stick ? window.AI_Stick.predict(currentGroup, previousGroup) : null;
+        const predExtreme = window.AI_ExtremeSwitch ? window.AI_ExtremeSwitch.predict(currentGroup, previousGroup) : null;
+        const predLowMid = window.AI_LowMidSwitch ? window.AI_LowMidSwitch.predict(currentGroup, previousGroup) : null;
+        const predMidHigh = window.AI_MidHighSwitch ? window.AI_MidHighSwitch.predict(currentGroup, previousGroup) : null;
+        
+        const ensemble = window.EnsembleVoterV4 ? window.EnsembleVoterV4.combine(predStick, predExtreme, predLowMid, predMidHigh, currentGroup, previousGroup) : null;
+        
+        // AI-A (Stick)
+        if (predStick) {
+            document.getElementById('aiStickInput').textContent = `${previousGroup} → ${currentGroup}`;
+            document.getElementById('aiStickPred').innerHTML = predStick.prediction === "STICK" ? 
+                `${window.AI_Stick.getGroupIcon(predStick.nextGroup)} ${predStick.nextGroup} (Stick)` :
+                `${window.AI_Stick.getGroupIcon(predStick.nextGroup)} Switch to ${predStick.nextGroup}`;
+            document.getElementById('aiStickConf').textContent = `${predStick.confidence}%`;
+            document.getElementById('aiStickAcc').textContent = `${predStick.accuracy.toFixed(1)}%`;
         }
         
-        if (pred3) {
-            document.getElementById('ai3Input').textContent = pred3.pattern ? pred3.pattern.replace(/\|/g, ' → ') : '--';
-            document.getElementById('ai3Pred').innerHTML = `${window.AI_3Step.getGroupIcon(pred3.group)} ${pred3.group}`;
-            document.getElementById('ai3Conf').textContent = `${pred3.confidence}%`;
-            document.getElementById('ai3Acc').textContent = `${pred3.accuracy.toFixed(1)}%`;
+        // AI-B (Extreme Switch)
+        if (predExtreme) {
+            document.getElementById('aiExtremeInput').textContent = predExtreme.pattern || `${previousGroup} → ${currentGroup}`;
+            document.getElementById('aiExtremePred').innerHTML = predExtreme.prediction === "CONTINUE" ? 
+                `${window.AI_ExtremeSwitch.getGroupIcon(predExtreme.pattern?.split("→")[1] || "MEDIUM")} Continue ${predExtreme.pattern?.split("→")[1] || "MEDIUM"}` :
+                `${window.AI_ExtremeSwitch.getGroupIcon(predExtreme.nextGroup)} Break to ${predExtreme.nextGroup}`;
+            document.getElementById('aiExtremeConf').textContent = `${predExtreme.confidence}%`;
+            document.getElementById('aiExtremeAcc').textContent = `${predExtreme.accuracy.toFixed(1)}%`;
         }
         
-        if (pred4) {
-            document.getElementById('ai4Input').textContent = pred4.pattern ? pred4.pattern.replace(/\|/g, ' → ') : '--';
-            document.getElementById('ai4Pred').innerHTML = `${window.AI_4Step.getGroupIcon(pred4.group)} ${pred4.group}`;
-            document.getElementById('ai4Conf').textContent = `${pred4.confidence}%`;
-            document.getElementById('ai4Acc').textContent = `${pred4.accuracy.toFixed(1)}%`;
+        // AI-C (Low-Mid Switch)
+        if (predLowMid) {
+            document.getElementById('aiLowMidInput').textContent = predLowMid.pattern || `${previousGroup} → ${currentGroup}`;
+            document.getElementById('aiLowMidPred').innerHTML = predLowMid.prediction === "CONTINUE" ?
+                `${window.AI_LowMidSwitch.getGroupIcon(predLowMid.pattern?.split("→")[1] || "MEDIUM")} Continue ${predLowMid.pattern?.split("→")[1] || "MEDIUM"}` :
+                `${window.AI_LowMidSwitch.getGroupIcon(predLowMid.nextGroup)} Break to ${predLowMid.nextGroup}`;
+            document.getElementById('aiLowMidConf').textContent = `${predLowMid.confidence}%`;
+            document.getElementById('aiLowMidAcc').textContent = `${predLowMid.accuracy.toFixed(1)}%`;
         }
         
+        // AI-D (Mid-High Switch)
+        if (predMidHigh) {
+            document.getElementById('aiMidHighInput').textContent = predMidHigh.pattern || `${previousGroup} → ${currentGroup}`;
+            document.getElementById('aiMidHighPred').innerHTML = predMidHigh.prediction === "CONTINUE" ?
+                `${window.AI_MidHighSwitch.getGroupIcon(predMidHigh.pattern?.split("→")[1] || "HIGH")} Continue ${predMidHigh.pattern?.split("→")[1] || "HIGH"}` :
+                `${window.AI_MidHighSwitch.getGroupIcon(predMidHigh.nextGroup)} Break to ${predMidHigh.nextGroup}`;
+            document.getElementById('aiMidHighConf').textContent = `${predMidHigh.confidence}%`;
+            document.getElementById('aiMidHighAcc').textContent = `${predMidHigh.accuracy.toFixed(1)}%`;
+        }
+        
+        // Ensemble
         if (ensemble) {
             const agreement = ensemble.final.agreement;
-            document.getElementById('voteCount').textContent = `(${agreement}/3 AI agree)`;
-            document.getElementById('finalIcon').textContent = window.EnsembleVoter.getGroupIcon(ensemble.final.group);
+            document.getElementById('voteCount').textContent = `(${agreement}/4 AI agree)`;
+            document.getElementById('finalIcon').textContent = window.EnsembleVoterV4.getGroupIcon(ensemble.final.group);
             document.getElementById('finalName').textContent = ensemble.final.group;
-            document.getElementById('finalRange').textContent = `(${window.EnsembleVoter.getGroupRange(ensemble.final.group)})`;
+            document.getElementById('finalRange').textContent = `(${window.EnsembleVoterV4.getGroupRange(ensemble.final.group)})`;
             document.getElementById('confidenceFill').style.width = `${ensemble.final.confidence}%`;
             document.getElementById('finalConfidence').textContent = `${ensemble.final.confidence}%`;
             document.getElementById('finalExplanation').textContent = ensemble.explanation;
             
             const weights = ensemble.weights;
-            document.getElementById('finalWeights').innerHTML = `Weights: AI#1 ${(weights.step2*100).toFixed(0)}% | AI#2 ${(weights.step3*100).toFixed(0)}% | AI#3 ${(weights.step4*100).toFixed(0)}%`;
+            document.getElementById('finalWeights').innerHTML = `Weights: Stick ${(weights.stick*100).toFixed(0)}% | Extreme ${(weights.extremeSwitch*100).toFixed(0)}% | Low-Mid ${(weights.lowMidSwitch*100).toFixed(0)}% | Mid-High ${(weights.midHighSwitch*100).toFixed(0)}%`;
         }
     }
     
