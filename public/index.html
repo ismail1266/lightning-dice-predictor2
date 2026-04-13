@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="description" content="Lightning Dice Predictor - Three AI Pattern Recognition System">
-    <title>Lightning Dice Predictor - Three AI System</title>
+    <meta name="description" content="Lightning Dice Predictor - Four AI Pattern Recognition System">
+    <title>Lightning Dice Predictor - Four AI System</title>
     <link rel="stylesheet" href="/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -15,14 +15,11 @@
             <div class="logo">
                 <span class="lightning-icon">⚡</span>
                 <h1>Lightning Dice Predictor</h1>
-                <span class="version-badge">v4.0 - Three AI System</span>
+                <span class="version-badge">v5.0 - Four AI System</span>
             </div>
             <div class="status-badge" id="connectionStatus">
                 <span class="status-dot"></span>
                 <span id="statusText">Connecting...</span>
-            </div>
-            <div class="nav-links">
-                <a href="/" class="nav-link active">🎯 Lightning Dice Predictor</a>
             </div>
         </header>
 
@@ -48,41 +45,49 @@
             </div>
         </div>
 
-        <!-- Three AI Pattern Table -->
+        <!-- Four AI Pattern Table -->
         <div class="prediction-section">
-            <h2>🎯 THREE AI PATTERN PREDICTION SYSTEM</h2>
+            <h2>🎯 FOUR AI PATTERN PREDICTION SYSTEM</h2>
             
             <div class="pattern-table">
                 <div class="pattern-header">
                     <div class="col-ai">AI Model</div>
-                    <div class="col-input">Input Pattern</div>
+                    <div class="col-input">Current Pattern</div>
                     <div class="col-prediction">Prediction</div>
                     <div class="col-confidence">Confidence</div>
                     <div class="col-accuracy">Accuracy</div>
                 </div>
                 
-                <div class="pattern-row" id="ai2Row">
-                    <div class="col-ai"><span class="ai-badge ai2">🤖 AI #1</span><br><small>2-Step</small></div>
-                    <div class="col-input" id="ai2Input">--</div>
-                    <div class="col-prediction" id="ai2Pred">--</div>
-                    <div class="col-confidence" id="ai2Conf">--</div>
-                    <div class="col-accuracy" id="ai2Acc">--</div>
+                <div class="pattern-row" id="aiStickRow">
+                    <div class="col-ai"><span class="ai-badge ai-stick">🎯 AI-A</span><br><small>Stick Detector</small></div>
+                    <div class="col-input" id="aiStickInput">--</div>
+                    <div class="col-prediction" id="aiStickPred">--</div>
+                    <div class="col-confidence" id="aiStickConf">--</div>
+                    <div class="col-accuracy" id="aiStickAcc">--</div>
                 </div>
                 
-                <div class="pattern-row" id="ai3Row">
-                    <div class="col-ai"><span class="ai-badge ai3">🤖 AI #2</span><br><small>3-Step</small></div>
-                    <div class="col-input" id="ai3Input">--</div>
-                    <div class="col-prediction" id="ai3Pred">--</div>
-                    <div class="col-confidence" id="ai3Conf">--</div>
-                    <div class="col-accuracy" id="ai3Acc">--</div>
+                <div class="pattern-row" id="aiExtremeRow">
+                    <div class="col-ai"><span class="ai-badge ai-extreme">🔄 AI-B</span><br><small>Extreme Switch</small></div>
+                    <div class="col-input" id="aiExtremeInput">--</div>
+                    <div class="col-prediction" id="aiExtremePred">--</div>
+                    <div class="col-confidence" id="aiExtremeConf">--</div>
+                    <div class="col-accuracy" id="aiExtremeAcc">--</div>
                 </div>
                 
-                <div class="pattern-row" id="ai4Row">
-                    <div class="col-ai"><span class="ai-badge ai4">🤖 AI #3</span><br><small>4-Step</small></div>
-                    <div class="col-input" id="ai4Input">--</div>
-                    <div class="col-prediction" id="ai4Pred">--</div>
-                    <div class="col-confidence" id="ai4Conf">--</div>
-                    <div class="col-accuracy" id="ai4Acc">--</div>
+                <div class="pattern-row" id="aiLowMidRow">
+                    <div class="col-ai"><span class="ai-badge ai-lowmid">↗️ AI-C</span><br><small>Low-Mid Switch</small></div>
+                    <div class="col-input" id="aiLowMidInput">--</div>
+                    <div class="col-prediction" id="aiLowMidPred">--</div>
+                    <div class="col-confidence" id="aiLowMidConf">--</div>
+                    <div class="col-accuracy" id="aiLowMidAcc">--</div>
+                </div>
+                
+                <div class="pattern-row" id="aiMidHighRow">
+                    <div class="col-ai"><span class="ai-badge ai-midhigh">↘️ AI-D</span><br><small>Mid-High Switch</small></div>
+                    <div class="col-input" id="aiMidHighInput">--</div>
+                    <div class="col-prediction" id="aiMidHighPred">--</div>
+                    <div class="col-confidence" id="aiMidHighConf">--</div>
+                    <div class="col-accuracy" id="aiMidHighAcc">--</div>
                 </div>
             </div>
 
@@ -91,7 +96,7 @@
                 <div class="final-header">
                     <span class="final-icon">🏆</span>
                     <span class="final-title">ENSEMBLE FINAL PREDICTION</span>
-                    <span class="final-vote" id="voteCount">(2 AI agree)</span>
+                    <span class="final-vote" id="voteCount">(0/4 AI agree)</span>
                 </div>
                 <div class="final-group" id="finalGroup">
                     <span class="final-group-icon" id="finalIcon">🎯</span>
@@ -152,14 +157,15 @@
                             <th>Time</th>
                             <th>Dice</th>
                             <th>Total</th>
-                            <th>AI #1<br>2-Step</th>
-                            <th>AI #2<br>3-Step</th>
-                            <th>AI #3<br>4-Step</th>
+                            <th>AI-A<br>Stick</th>
+                            <th>AI-B<br>Extreme</th>
+                            <th>AI-C<br>Low-Mid</th>
+                            <th>AI-D<br>Mid-High</th>
                             <th>ENSEMBLE</th>
                         </tr>
                     </thead>
                     <tbody id="historyTableBody">
-                        <tr><td colspan="7">Loading history......</td></tr>
+                        <tr><td colspan="8">Loading history......</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -180,7 +186,6 @@
                 <div class="loading">Loading results...</div>
             </div>
         </div>
-
 
         <!-- Statistics Table -->
         <div class="stats-section collapsible-section">
@@ -219,11 +224,12 @@
         </div>
     </div>
 
-    <!-- Load AI Models in order -->
-    <script src="/ai/ai-2step.js"></script>
-    <script src="/ai/ai-3step.js"></script>
-    <script src="/ai/ai-4step.js"></script>
-    <script src="/ai/ensemble.js"></script>
+    <!-- Load New AI Models in order -->
+    <script src="/ai/ai-stick.js"></script>
+    <script src="/ai/ai-extreme-switch.js"></script>
+    <script src="/ai/ai-low-mid-switch.js"></script>
+    <script src="/ai/ai-mid-high-switch.js"></script>
+    <script src="/ai/ensemble-v4.js"></script>
     <script src="/script.js"></script>
 </body>
 </html>
